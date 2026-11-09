@@ -10,8 +10,9 @@ COPY package.json package-lock.json ./
 RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/productpulse?schema=public" npm ci
 
 COPY . .
-RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/productpulse?schema=public" npm run db:generate \
-    && npm run build
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/productpulse?schema=public"
+
+RUN npm run db:generate && npm run build
 
 ENV NODE_ENV=production
 ENV PORT=10000
