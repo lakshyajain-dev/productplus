@@ -1,0 +1,53 @@
+{
+  "name": "productpulse",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:client": "vite --host 0.0.0.0",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc -b && vite build",
+    "start": "tsx server/index.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "test": "node --import tsx --test server/api.test.ts server/integration.test.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/client": "^6.18.0",
+    "@vectorize-io/hindsight-client": "^1.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "framer-motion": "^12.23.24",
+    "helmet": "^8.1.0",
+    "lucide-react": "^0.548.0",
+    "multer": "^2.0.2",
+    "papaparse": "^5.5.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "react-router-dom": "^7.9.5",
+    "recharts": "^3.3.0",
+    "zod": "^4.1.12",
+    "@tanstack/react-query": "^5.90.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/papaparse": "^5.3.16",
+    "concurrently": "^9.2.1",
+    "prisma": "^6.18.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  }
+}

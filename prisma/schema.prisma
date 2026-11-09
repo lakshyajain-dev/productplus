@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String          @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String          @unique
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  users     User[]
+  feedback  Feedback[]
+  issues    Issue[]
+  updates   ProductUpdate[]
+  insights  Insight[]
+  jobs      ProcessingJob[]
+  memories  MemoryReference[]
+  audits    AuditLog[]
+}
+
+model User {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  email       String
+  name        String
+  role        String    @default("member")
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId, email])
+}
+
+model Feedback {
+  id             String                 @id @default(uuid()) @db.Uuid
+  workspaceId    String                 @db.Uuid
+  customerName   String
+  customerEmail  String?
+  message        String                 @db.Text
+  source         String
+  receivedAt     DateTime               @default(now())
+  processingState String                @default("processed")
+  isDemo         Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  classification FeedbackClassification?
+  issues         IssueFeedback[]
+  memories       MemoryReference[]
+  insightLinks   InsightFeedback[]
+  @@index([workspaceId, receivedAt])
+  @@index([workspaceId, source])
+}
+
+model FeedbackClassification {
+  id              String   @id @default(uuid()) @db.Uuid
+  feedbackId      String   @unique @db.Uuid
+  sentiment       String
+  topic           String
+  subtopic        String?
+  urgency         String
+  intent          String
+  summary         String   @db.Text
+  keywords        Json
+  suggestedIssue  String?
+  confidence      Float
+  aiRaw           Json?
+  humanCorrection Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  feedback        Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+}
+
+model Issue {
+  id          String          @id @default(uuid()) @db.Uuid
+  workspaceId String          @db.Uuid
+  title       String
+  description String          @db.Text
+  category    String
+  severity    String
+  priority    String
+  status      String          @default("New")
+  trend       String          @default("Insufficient Data")
+  firstSeen   DateTime        @default(now())
+  lastSeen    DateTime        @default(now())
+  recommendation String?     @db.Text
+  isDemo      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedback    IssueFeedback[]
+  updates     ProductUpdateIssue[]
+  insights    Insight[]
+  impacts     ImpactAnalysis[]
+  memories    MemoryReference[]
+  @@index([workspaceId, status])
+}
+
+model IssueFeedback {
+  issueId    String   @db.Uuid
+  feedbackId String   @db.Uuid
+  createdAt  DateTime @default(now())
+  issue      Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  @@id([issueId, feedbackId])
+}
+
+model ProductUpdate {
+  id              String                @id @default(uuid()) @db.Uuid
+  workspaceId     String                @db.Uuid
+  title           String
+  description     String                @db.Text
+  productArea     String
+  releaseDate     DateTime
+  expectedOutcome String                @db.Text
+  status          String                @default("Planned")
+  isDemo          Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  workspace       Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  issues          ProductUpdateIssue[]
+  memories        MemoryReference[]
+  impacts         ImpactAnalysis[]
+  @@index([workspaceId, releaseDate])
+}
+
+model ProductUpdateIssue {
+  productUpdateId String        @db.Uuid
+  issueId         String        @db.Uuid
+  productUpdate   ProductUpdate @relation(fields: [productUpdateId], references: [id], onDelete: Cascade)
+  issue           Issue         @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  @@id([productUpdateId, issueId])
+}
+
+model Insight {
+  id          String           @id @default(uuid()) @db.Uuid
+  workspaceId String           @db.Uuid
+  title       String
+  description String           @db.Text
+  category    String
+  priority    String
+  confidence  Float
+  evidence    Json
+  recommendation String?       @db.Text
+  createdAt   DateTime         @default(now())
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedback    InsightFeedback[]
+  issues      Issue[]
+  @@index([workspaceId, createdAt])
+}
+
+model InsightFeedback {
+  insightId  String   @db.Uuid
+  feedbackId String   @db.Uuid
+  insight    Insight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  @@id([insightId, feedbackId])
+}
+
+model ImpactAnalysis {
+  id                   String        @id @default(uuid()) @db.Uuid
+  productUpdateId      String        @db.Uuid
+  issueId              String?       @db.Uuid
+  beforeDays           Int           @default(30)
+  afterDays            Int           @default(30)
+  beforeFeedbackCount  Int
+  afterFeedbackCount   Int
+  beforeNegativeCount Int
+  afterNegativeCount  Int
+  explanation          String?       @db.Text
+  insufficientData     Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  productUpdate        ProductUpdate @relation(fields: [productUpdateId], references: [id], onDelete: Cascade)
+  issue                Issue?        @relation(fields: [issueId], references: [id], onDelete: SetNull)
+}
+
+model MemoryReference {
+  id          String       @id @default(uuid()) @db.Uuid
+  workspaceId String       @db.Uuid
+  bankId      String
+  sourceType  String
+  sourceId    String       @db.Uuid
+  memoryId    String?
+  contentHash String       @unique
+  syncStatus  String       @default("pending")
+  lastError   String?
+  retainedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedback    Feedback?    @relation(fields: [feedbackId], references: [id])
+  issue       Issue?       @relation(fields: [issueId], references: [id])
+  productUpdate ProductUpdate? @relation(fields: [productUpdateId], references: [id])
+  feedbackId  String?      @db.Uuid
+  issueId     String?      @db.Uuid
+  productUpdateId String?  @db.Uuid
+  @@index([workspaceId, syncStatus])
+}
+
+model ProcessingJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  type        String
+  entityId    String?   @db.Uuid
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  lastError   String?
+  runAt       DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([status, runAt])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  action      String
+  entityType  String
+  entityId    String?
+  detail      Json?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, createdAt])
+}

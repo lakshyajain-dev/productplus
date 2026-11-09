@@ -1,0 +1,40 @@
+databases:
+  - name: productpulse-staging-db
+    databaseName: productpulse
+    user: productpulse
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: productpulse-staging-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    initialDeployHook: npm run db:seed
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: SERVE_CLIENT
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: productpulse-staging-db
+          property: connectionString
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HINDSIGHT_API_URL
+        value: https://api.hindsight.vectorize.io
+      - key: HINDSIGHT_API_KEY
+        sync: false
+      - key: HINDSIGHT_BANK_ID
+        value: ProductPulse
+      - key: PRODUCTPULSE_PROXY_SECRET
+        sync: false
