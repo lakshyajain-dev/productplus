@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "postgresql://productpulse:7WLUEcxnmYRPZhW7ELVXigjDnl2vNg0B@dpg-dbou8oec6qcc738pijs0-a/productpulse_6mo1",
+  "buildCommand": "DATABASE_URL=postgresql://build:build@127.0.0.1:5432/productpulse npm run build",
   "outputDirectory": "dist",
   "functions": {
     "api/[...path].js": {
