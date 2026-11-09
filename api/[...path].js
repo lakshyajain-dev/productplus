@@ -16,10 +16,17 @@ export default function handler(req, res) {
   let target;
   try {
     const requestUrl = new URL(req.url || '/', 'https://vercel.invalid');
-    if (!requestUrl.pathname.startsWith('/api/')) throw new Error('Invalid API path');
+    const nestedPath = requestUrl.searchParams.get('__pp_proxy_path');
+    const isNestedRewrite = requestUrl.searchParams.get('__pp_nested') === '1';
+    const apiPath = isNestedRewrite && nestedPath ? nestedPath : requestUrl.pathname;
+    if (!apiPath.startsWith('/api/') || apiPath.startsWith('//')) throw new Error('Invalid API path');
     const apiOrigin = new URL(origin);
     if (apiOrigin.protocol !== 'https:') throw new Error('API origin must use HTTPS');
-    target = new URL(`${requestUrl.pathname}${requestUrl.search}`, apiOrigin);
+    target = new URL(apiPath, apiOrigin);
+    if (target.origin !== apiOrigin.origin || !target.pathname.startsWith('/api/')) throw new Error('Invalid API path');
+    for (const [name, value] of requestUrl.searchParams) {
+      if (name !== '__pp_nested' && name !== '__pp_proxy_path') target.searchParams.append(name, value);
+    }
   } catch {
     res.statusCode = 400;
     res.end('Invalid API destination.');

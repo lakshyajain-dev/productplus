@@ -9,6 +9,10 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/api/:first/:rest*",
+      "destination": "/api/:first?__pp_nested=1&__pp_proxy_path=/api/:first/:rest*"
+    },
     { "source": "/", "destination": "/index.html" },
     { "source": "/:path((?!api/).*)", "destination": "/index.html" }
   ]
